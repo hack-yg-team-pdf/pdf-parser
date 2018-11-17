@@ -19,5 +19,5 @@ The Script will load all PDF files loaded into the `raw_pdfs/` directory.
 ## Outputs
 
 * `mturk_images/*` - Cropped images of a specific form field for uploading to mechanical turk for field identification, filenames formatted as `{pdfid}_{form_object_id}.png`
-* `mturk.csv` - Manifest of all the Mechanical turk images along with text nearby to make copy/paste easier
+* `mturk.csv` - Manifest of all the Mechanical turk images along with text nearby to make copy/paste easier. The label text is not guaranteed to be in this blob, so mturk operators would need to be presented with the corresponding image and the text blob, but will still manually need to input the label.
 * `output_json/*` - Json representation of corresponding PDF form fields with a "best guess" as to field labels for JSON forms format. filenames formatted as `{pdfid}.json`
