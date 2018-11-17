@@ -16,6 +16,7 @@ from pdfminer.layout import LAParams
 from pdfminer.converter import PDFPageAggregator
 import pdfminer
 import json
+import glob
 
 from pyqtree import Index
 
@@ -42,10 +43,11 @@ def parse_obj(lt_objs, quadtree_index):
                         quadtree_index.insert((literal_text, new_bbox), new_bbox)
                         print("%6d, %6d, %s" % (new_bbox[0], new_bbox[1], literal_text))
 
-files = ['raw_pdfs/yg6509_e.pdf', 'raw_pdfs/yg4552_b.pdf', 'raw_pdfs/yg6560_e.pdf']
+files = glob.glob('original_pdfs/*.pdf')
+
 for filename in files:
     code = filename.split('/')[1].split('.')[0]
-    json_name = 'json_forms/' + code + '.json'
+    json_name = 'output_json/' + code + '.json'
     print(json_name)
 
     fp = open(filename, 'rb')
@@ -87,14 +89,23 @@ for filename in files:
         parse_obj(layout._objs, quadtree_index)
 
     sanitized_fields = []
+
+    if 'AcroForm' not in doc.catalog:
+        continue
+
     fields = resolve1(doc.catalog['AcroForm'])['Fields']
+    if type(fields) is not list:
+        continue
+
     for field in fields:
         resolved_field = resolve1(field)
         name, value, rect, page_id = resolved_field.get('T'), resolved_field.get('V'), resolved_field.get('Rect'), resolved_field.get('P')
         # PDF Rect comes in format
 
         is_textfield = True
-        if resolved_field['FT'].name == 'Tx':
+        if 'FT' not in resolved_field:
+            is_textfield = True
+        elif resolved_field['FT'].name == 'Tx':
             is_textfield = True
         elif resolved_field['FT'].name == 'Btn':
             is_textfield = False
