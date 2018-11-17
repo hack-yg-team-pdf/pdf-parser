@@ -114,9 +114,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 .idea/
-decrypted_pdfs
 mturk_images
-raw_pdfs
 original_pdfs
-output_json
 json_forms
