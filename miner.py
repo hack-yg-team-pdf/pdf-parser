@@ -195,9 +195,9 @@ def process_pdf_file(filename, csvwriter, make_crops):
             # need to handle None return type on a fail
             (field_id, field_type, field_description, cropped_file_name, match_str) = processed_field
 
-        if make_crops:
-            csvwriter.writerow((cropped_file_name, match_str))
-        sanitized_fields.append((field_id, field_type, field_description))
+            if make_crops:
+                csvwriter.writerow((cropped_file_name, match_str))
+            sanitized_fields.append((field_id, field_type, field_description))
 
     create_json_file(output_file_code, sanitized_fields)
 
@@ -213,4 +213,8 @@ if __name__ == "__main__":
         for filename in files:
             print('Processing (',i, ')', filename)
             i += 1
-            process_pdf_file(filename, mturk_writer, True)
+            try:
+                process_pdf_file(filename, mturk_writer, True)
+            except:
+                print("Error processing", filename)
+
