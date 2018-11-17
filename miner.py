@@ -15,21 +15,28 @@ from pdfminer.pdfdevice import PDFDevice
 from pdfminer.layout import LAParams
 from pdfminer.converter import PDFPageAggregator
 import pdfminer
+import json
 
 from pyqtree import Index
 
 from pdfminer.layout import LAParams, LTTextBox,LTChar, LTFigure
 
-filename = 'decrypted_pdfs/1.pdf'
+files = ['raw_pdfs/yg6509_e.pdf', 'raw_pdfs/yg4552_b.pdf', 'raw_pdfs/yg6560_e.pdf']
+
+filename = files[1]
+code = filename.split('/')[1].split('.')[0]
+json_name = 'json_forms/' + code + '.json'
+print(json_name)
+
 fp = open(filename, 'rb')
 
 images = convert_from_path(filename)
 
 parser = PDFParser(fp)
-doc = PDFDocument(parser)
+doc = PDFDocument(parser, password='')
 
-if not doc.is_extractable:
-    raise PDFTextExtractionNotAllowed
+#if not doc.is_extractable:
+#    raise PDFTextExtractionNotAllowed
 
 # Create a PDF resource manager object that stores shared resources.
 rsrcmgr = PDFResourceManager()
@@ -53,7 +60,7 @@ def parse_obj(lt_objs, quadtree_index):
         # if it's a textbox, print text and location
         if isinstance(obj, pdfminer.layout.LTTextBoxHorizontal):
             quadtree_index.insert(obj, obj.bbox)
-            #print("%6d, %6d, %s" % (obj.bbox[0], obj.bbox[1], obj.get_text().replace('\n', '_')))
+            print("%6d, %6d, %s" % (obj.bbox[0], obj.bbox[1], obj.get_text().replace('\n', '_')))
 
 pdfImages = {}
 for i, pdfPage in enumerate(PDFPage.create_pages(doc)):
@@ -67,6 +74,7 @@ for i, pdfPage in enumerate(PDFPage.create_pages(doc)):
     # extract text from this object
     parse_obj(layout._objs, quadtree_index)
 
+sanitized_fields = []
 fields = resolve1(doc.catalog['AcroForm'])['Fields']
 for field in fields:
     resolved_field = resolve1(field)
@@ -97,7 +105,7 @@ for field in fields:
 
     scale = image_height / page_height
 
-    print('{0}: {1}, {2}'.format(name, value, rect))
+    # print('{0}: {1}, {2}'.format(name, value, rect))
 
     x0 = rect[0] * scale
     y0 = image_height - rect[1] * scale
@@ -126,10 +134,20 @@ for field in fields:
         else:
             spacer += 10
 
-    if len(matches) == 1:
-        print('test')
+    # if len(matches) == 1:
+    #     print('test')
+    #else:
+    #     print(len(matches))
+
+    field_id = field.objid
+    field_description = matches[0].get_text().replace('_', '')
+
+    if is_textfield:
+        field_type = 'string'
     else:
-        print(len(matches))
+        field_type = 'boolean'
+
+    sanitized_fields.append((field_id, field_type, field_description))
 
     # cropped = img.crop( ( x, y, x + width , y + height ) )
     # crop_area = (x0-300, y1-200, x1+300, y0+200)
@@ -141,5 +159,25 @@ for field in fields:
 
     # break
 
-for pdfImage in pdfImages:
-    pdfImages[pdfImage][0].show()
+data = {}
+data['fields'] = 'value'
+json_data = json.dumps(data)
+
+#for pdfImage in pdfImages:
+#    pdfImages[pdfImage][0].show()
+
+
+field_properties = {}
+for field in sanitized_fields:
+    field_properties[field[0]] = {'type': field[1], 'description': field[2]}
+
+fields = {}
+fields['properties'] = field_properties
+fields['type'] = 'object'
+data['fields'] = fields
+
+json_data = json.dumps(data, indent=2, sort_keys=True)
+with open(json_name, 'w') as f:
+    f.write(json_data)
+
+print(json_data)
