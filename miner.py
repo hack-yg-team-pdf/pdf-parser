@@ -151,7 +151,7 @@ def process_form_field(field, output_file_code, pdf_processed_pages, make_crops)
 
 
 def create_json_file(filename_code, sanitized_fields):
-    json_name = 'output_json/' + filename_code + '.json'
+    json_name = 'json_forms/' + filename_code + '.json'
 
     field_properties = {}
     for field in sanitized_fields:
